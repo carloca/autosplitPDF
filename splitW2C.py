@@ -22,7 +22,7 @@ def parseCommandLine():
     group.add_argument('-q', '--quiet', action='store_true', help='no logging except errors')
     parser.add_argument('-d', '--delete-source', action='store_true', help='delete source document after processing')
     parser.add_argument('-p', '--printID', action='store_true', help='prints all text values with OP ID from the pdf instead of separating the pages')
-    parser.add_argument('-o', '--output-filenames-template', help='template for output filenames, e.g. "W2C form of {OP21}.pdf', default='W2C form of {OP21}.pdf')
+    parser.add_argument('-o', '--output-filenames-template', help='template for output filenames, e.g. "W2C form of {OP21}.pdf', default='W2C form of {OP21} {OP35}.pdf')
     parser.add_argument('filename', help='path of the source document (PDF)')
     return parser.parse_args()
 
