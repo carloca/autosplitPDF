@@ -21,14 +21,24 @@ def parseCommandLine():
     group.add_argument('-v', '--verbose', action='store_true', help='be very verbose')
     group.add_argument('-q', '--quiet', action='store_true', help='no logging except errors')
     parser.add_argument('-d', '--delete-source', action='store_true', help='delete source document after processing')
-    parser.add_argument('-p', '--printID', action='store_true',
-                        help='prints all text values with OP ID from the pdf instead of separating the pages')
-    parser.add_argument('-o', '--output_filenames_template',
-                        help='template for output filenames, e.g. "W2C form of {OP21}.pdf',
-                        default='W2C form of {OP21} {OP35} {OP39}.pdf')
+    parser.add_argument('-p', '--printID', action='store_true', help='prints all text values with OP ID from the pdf instead of separating the pages')
+    parser.add_argument('-o', '--output_filenames_template', help='template for output filenames, e.g. "W2C form of {OP21}.pdf. Pass "function" + {operations} to use a personalized function', default='W2C form of {OP21} {OP35} {OP39}.pdf')
     parser.add_argument('filename', help='path of the source document (PDF)', default='myOutput.pdf')
-    # parser.add_argument('outputFilename', help='path of the destination documents (PDF)')
     return parser.parse_args()
+
+
+def getOutputFilename(param):
+    fullname = param["OP21"].split(" ")
+    pattern = re.compile('^\d{3}-\d{2}-\d{4}$')
+    first = pattern.match(param["OP35"])
+    if first:
+        return fullname[1] + ", " + fullname[0] + "_" + first.group() + "_W2C form.pdf"
+    else:
+        second = pattern.match(param["OP39"])
+        if second:
+            return fullname[1] + ", " + fullname[0] + "_" + second.group() + "_W2C form.pdf"
+        else:
+            return None
 
 
 def splitW2C(filename, template):
@@ -48,24 +58,16 @@ def splitW2C(filename, template):
                 formattingDictionary[formatterID] = re.sub('\s+', ' ', text).strip().title()
             output = PyPDF2.PdfFileWriter()
             output.addPage(page)
-            outputFilename = getoutputfilename(formattingDictionary)
+            if 'function' in template:
+                outputFilename = getOutputFilename(formattingDictionary)
+            else:
+                outputFilename = template.format(**formattingDictionary)
+            if not outputFilename:
+                outputFilename = "Problem Page " + index
+                log.info('No name created for page %s to %s', index + 1, outputFilename)
             with open(outputFilename, "wb") as outputStream:
                 log.debug('Exporting page %s to %s', index + 1, outputFilename)
                 output.write(outputStream)
-
-
-def getoutputfilename(param):
-    fullname = param["OP21"].split(" ")
-    pattern = re.compile('^\d{3}-\d{2}-\d{4}$')
-    first = pattern.match(param["OP35"])
-    if first:
-        return fullname[1] + ", " + fullname[0] + "_" + first.group() + "_W2C form.pdf"
-    else:
-        second = pattern.match(param["OP39"])
-        if second:
-            return fullname[1] + ", " + fullname[0] + "_" + second.group() + "_W2C form.pdf"
-        else:
-            return True
 
 
 def printOperations(filename):
